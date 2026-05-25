@@ -7,10 +7,6 @@ const M_LONGO = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","
 const STEPS       = ["periodo", "omie", "cashflow"];
 const STEP_LABELS = { periodo: "Período", omie: "Dados Omie", cashflow: "Cashflow" };
 
-// ════════════════════════════════════════════════════════════
-//  OMIE API
-// ════════════════════════════════════════════════════════════
-
 async function omieCall(omieEndpoint, call, params) {
   const res = await fetch("/api/omie", {
     method: "POST",
@@ -110,7 +106,7 @@ function StepPeriodo({ onNext }) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  STEP 2: DIAGNÓSTICO OMIE
+//  STEP 2: DIAGNÓSTICO — sem filtrar_por_tipo_data
 // ════════════════════════════════════════════════════════════
 
 function StepOmie({ ano, onNext, onBack }) {
@@ -123,15 +119,24 @@ function StepOmie({ ano, onNext, onBack }) {
     setStatus("loading");
     setErro("");
     setDiagData(null);
-    setMsg("Buscando 1 registro de teste...");
+    setMsg("Buscando registro de teste...");
     try {
+      // Sem filtrar_por_tipo_data — parâmetro inválido no Omie
       const resp = await omieCall(
         "/financas/contareceber/", "ListarContasReceber",
-        { filtrar_por_data_de: `01/01/${ano}`, filtrar_por_data_ate: `31/12/${ano}`,
-          filtrar_por_tipo_data: "VENCIMENTO", pagina: 1, registros_por_pagina: 1 }
+        {
+          filtrar_por_data_de:  `01/01/${ano}`,
+          filtrar_por_data_ate: `31/12/${ano}`,
+          pagina: 1,
+          registros_por_pagina: 1,
+        }
       );
       const item = resp.conta_receber_cadastro?.[0];
-      setDiagData(item || { aviso: "Nenhum registro retornado", resp });
+      if (item) {
+        setDiagData(item);
+      } else {
+        setDiagData({ aviso: "Nenhum registro retornado", resp });
+      }
       setStatus("diag");
     } catch (e) {
       setErro(e.message);
@@ -151,8 +156,9 @@ function StepOmie({ ano, onNext, onBack }) {
         <>
           <div style={{ ...S.infoBox, marginTop: 24 }}>
             <div style={S.infoRow}><span>Período</span><span>01/01/{ano} — 31/12/{ano}</span></div>
-            <div style={S.infoRow}><span>Contas</span><span>PJ (Gestora) + PF (Sócios)</span></div>
-            <div style={{ ...S.infoRow, borderBottom: "none" }}><span>Modo</span><span style={{ color: "#F59E0B" }}>Diagnóstico — 1 registro</span></div>
+            <div style={{ ...S.infoRow, borderBottom: "none" }}><span>Modo</span>
+              <span style={{ color: "#F59E0B" }}>Diagnóstico — 1 registro</span>
+            </div>
           </div>
           <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
             <button onClick={onBack} style={S.btnSecondary}>← Voltar</button>
@@ -175,15 +181,13 @@ function StepOmie({ ano, onNext, onBack }) {
           </div>
           <div style={{
             background: "#0D1117", border: "1px solid #21262D", borderRadius: 8,
-            padding: 16, maxHeight: 400, overflowY: "auto",
+            padding: 16, maxHeight: 420, overflowY: "auto",
             fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#9CA3AF",
             whiteSpace: "pre-wrap", lineHeight: 1.8,
           }}>
             {JSON.stringify(diagData, null, 2)}
           </div>
-          <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-            <button onClick={onBack} style={S.btnSecondary}>← Voltar</button>
-          </div>
+          <button onClick={onBack} style={{ ...S.btnSecondary, marginTop: 16 }}>← Voltar</button>
         </div>
       )}
 
