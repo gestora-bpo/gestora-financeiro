@@ -35,7 +35,6 @@ module.exports = async function (context, req) {
           "Content-Length": Buffer.byteLength(payload),
         },
       };
-
       const request = https.request(options, (res) => {
         let body = "";
         res.on("data", (chunk) => (body += chunk));
@@ -44,17 +43,11 @@ module.exports = async function (context, req) {
           catch (e) { reject(new Error("Resposta inválida do Omie")); }
         });
       });
-
       request.on("error", reject);
       request.write(payload);
       request.end();
     });
-
-    context.res = {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-      body: data,
-    };
+    context.res = { status: 200, headers: { "Content-Type": "application/json" }, body: data };
   } catch (error) {
     context.res = { status: 500, body: { error: error.message } };
   }
