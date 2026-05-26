@@ -77,25 +77,13 @@ function StepOmie({ ano, onNext, onBack }) {
     setStatus("loading");
     setErro("");
     setDiagData(null);
-    setMsg("Testando PesquisarLancamentos...");
+    setMsg("Buscando contas correntes...");
     try {
-      // Testa o endpoint unificado que retorna nome do cliente e conta corrente
       const resp = await omieCall(
-        "/financas/pesquisartitulos/", "PesquisarLancamentos",
-        {
-          dDtEmisDe:  `01/01/${ano}`,
-          dDtEmisAte: `31/12/${ano}`,
-          nPagina: 1,
-          nRegPorPagina: 1,
-        }
+        "/geral/contacorrente/", "ListarContasCorrentes",
+        { pagina: 1, registros_por_pagina: 50 }
       );
-      const lista = resp.lancamentos || resp.titulos || resp.resultado || [];
-      const item  = lista[0];
-      if (item) {
-        setDiagData({ campos: Object.keys(item), exemplo: item });
-      } else {
-        setDiagData({ resposta_completa: resp });
-      }
+      setDiagData(resp);
       setStatus("diag");
     } catch (e) {
       setErro(e.message);
@@ -105,20 +93,14 @@ function StepOmie({ ano, onNext, onBack }) {
 
   return (
     <div>
-      <h2 style={S.stepTitle}>Dados do Omie</h2>
-      <p style={S.stepDesc}>Buscar lançamentos de <strong style={{ color: "#1B6B7B" }}>Janeiro a Dezembro/{ano}</strong></p>
+      <h2 style={S.stepTitle}>Diagnóstico — Contas Correntes</h2>
+      <p style={S.stepDesc}>Buscando mapa de IDs das contas correntes no Omie.</p>
 
       {status === "idle" && (
-        <>
-          <div style={{ ...S.infoBox, marginTop: 24 }}>
-            <div style={S.infoRow}><span>Período</span><span>01/01/{ano} — 31/12/{ano}</span></div>
-            <div style={{ ...S.infoRow, borderBottom: "none" }}><span>Modo</span><span style={{ color: "#F59E0B" }}>Diagnóstico — PesquisarLancamentos</span></div>
-          </div>
-          <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
-            <button onClick={onBack} style={S.btnSecondary}>← Voltar</button>
-            <button onClick={diagnostico} style={S.btn}>Buscar no Omie</button>
-          </div>
-        </>
+        <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+          <button onClick={onBack} style={S.btnSecondary}>← Voltar</button>
+          <button onClick={diagnostico} style={S.btn}>Buscar Contas Correntes</button>
+        </div>
       )}
 
       {status === "loading" && (
@@ -130,9 +112,7 @@ function StepOmie({ ano, onNext, onBack }) {
 
       {status === "diag" && diagData && (
         <div style={{ marginTop: 20 }}>
-          <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: "#10B981", marginBottom: 8 }}>
-            ✅ Resultado:
-          </div>
+          <div style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, color: "#10B981", marginBottom: 8 }}>✅ Resultado:</div>
           <div style={{ background:"#0D1117",border:"1px solid #21262D",borderRadius:8,padding:16,maxHeight:450,overflowY:"auto",fontFamily:"'IBM Plex Mono',monospace",fontSize:11,color:"#9CA3AF",whiteSpace:"pre-wrap",lineHeight:1.8 }}>
             {JSON.stringify(diagData, null, 2)}
           </div>
@@ -189,8 +169,6 @@ const S = {
   btn:          { background:"#1B6B7B",color:"#fff",border:"none",borderRadius:8,padding:"12px 24px",fontFamily:"'IBM Plex Mono',monospace",fontSize:13,fontWeight:600,cursor:"pointer",letterSpacing:1 },
   btnSecondary: { background:"transparent",color:"#6B7280",border:"1px solid #374151",borderRadius:8,padding:"12px 20px",fontFamily:"'IBM Plex Mono',monospace",fontSize:13,cursor:"pointer",letterSpacing:1 },
   anoBtn:       { border:"1px solid",borderRadius:8,padding:"10px 20px",fontFamily:"'IBM Plex Mono',monospace",fontSize:14,fontWeight:600,cursor:"pointer",transition:"all 0.2s" },
-  infoBox:      { background:"#0D1117",border:"1px solid #21262D",borderRadius:10,padding:"16px 20px" },
-  infoRow:      { display:"flex",justifyContent:"space-between",fontFamily:"'IBM Plex Sans',sans-serif",fontSize:13,color:"#9CA3AF",padding:"7px 0",borderBottom:"1px solid #1F2937" },
   loadingBox:   { display:"flex",alignItems:"center",gap:12,background:"rgba(245,158,11,0.05)",border:"1px solid rgba(245,158,11,0.2)",borderRadius:10,padding:"20px 24px",marginTop:24 },
   spinner:      { width:20,height:20,border:"2px solid #374151",borderTop:"2px solid #F59E0B",borderRadius:"50%",animation:"spin 0.8s linear infinite",flexShrink:0 },
 };
